@@ -13,7 +13,7 @@ typedef struct{
     char *buffer;
 }Buffer;
 
-Buffer* setBuffer(){
+Buffer* setFileBuffer(){
     Buffer* buffer = NULL;
     buffer = (Buffer *) malloc(sizeof(Buffer));
     buffer->buffer = (char *)malloc(LIMIT_BUFFER_SIZE + SEARCH_BUFFER_SIZE + BYTE_SIZE);
@@ -34,27 +34,27 @@ long getFileLength(FILE* file_in){
     return file_length;
 }
 
-void updateSearchBuffer(char* search_buffer, char char_read){
+
+/**
+ *    Walks 'File Buffer' and 'Search Buffer' 1 byte to Right
+ * */
+void buffersWalk(Buffer* file_buffer, char *search_buffer, char *char_read){
     search_buffer[0] = search_buffer[1];
     search_buffer[1] = search_buffer[2];
-    search_buffer[2] = char_read;
-}
-
-void moveBuffersOne2Rigth(Buffer* buffer, char *search_buffer, char *char_read){
-    updateSearchBuffer(search_buffer,*char_read);
-    strcat(buffer->buffer, char_read);
-    buffer->end += BYTE_SIZE;
-    if(buffer->end > LIMIT_BUFFER_SIZE) buffer->start += BYTE_SIZE;
+    search_buffer[2] = *char_read;
+    strcat(file_buffer->buffer, char_read);
+    file_buffer->end += BYTE_SIZE;
+    if(file_buffer->end > LIMIT_BUFFER_SIZE) file_buffer->start += BYTE_SIZE;
 }
 
 int main(int argc, char** argv) {
 
     FILE* file_in = NULL;
-    Buffer* buffer = NULL;
+    Buffer* file_buffer = NULL;
 
     long file_length;
-    char* search_buffer;
-    char* char_read;
+    char* search_buffer = NULL;
+    char* char_read = NULL;
 
     file_in = fopen(argv[1],"r");
     file_length = getFileLength(file_in);
@@ -62,23 +62,26 @@ int main(int argc, char** argv) {
         return (EXIT_FAILURE);
 
     setvbuf(file_in, NULL, _IOFBF, (size_t)file_length);
+    file_buffer = setFileBuffer();
 
-    buffer = setBuffer();
-
-    search_buffer = (char*) malloc(sizeof(SEARCH_BUFFER_SIZE));
     char_read = (char*) malloc(BYTE_SIZE);
 
+    // get first 3 chars to Search Buffer
+    search_buffer = (char*) malloc(sizeof(SEARCH_BUFFER_SIZE));
     fread(search_buffer, BYTE_SIZE, (size_t)(SEARCH_BUFFER_SIZE), file_in);
-    strcpy(buffer->buffer, search_buffer);
-    buffer->start = 0;
-    buffer->end = SEARCH_BUFFER_SIZE;
 
+    // set first 3 charts to File Buffer
+    strcpy(file_buffer->buffer, search_buffer);
+    file_buffer->start = 0;
+    file_buffer->end = SEARCH_BUFFER_SIZE;
+
+    // loop while != EOF
     while(fread(char_read, BYTE_SIZE, (size_t)(BYTE_SIZE), file_in)){
 
-        moveBuffersOne2Rigth(buffer,search_buffer,char_read);
+        buffersWalk(file_buffer,search_buffer,char_read);
 
-        // O c será o delimitador do Search Buffer
-        for(int c = buffer->start; c < buffer->end; c++){
+        // 'c' is  the delimiter of File Buffer
+        for(int c = file_buffer->start; c < file_buffer->end; c++){
 
 
         }
