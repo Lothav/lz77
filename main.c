@@ -6,6 +6,7 @@
 #define LIMIT_BUFFER_SIZE 32768
 #define SEARCH_BUFFER_SIZE 3
 #define BYTE_SIZE 1
+#define START_INDEX 0
 
 typedef struct{
     int start;
@@ -14,18 +15,19 @@ typedef struct{
 }Buffer;
 
 Buffer* setFileBuffer(){
-    Buffer* buffer = NULL;
-    buffer = (Buffer *) malloc(sizeof(Buffer));
-    buffer->buffer = (char *)malloc(LIMIT_BUFFER_SIZE + SEARCH_BUFFER_SIZE + BYTE_SIZE);
-    return buffer;
+    Buffer* file_buffer = NULL;
+    file_buffer = (Buffer *) malloc(sizeof(Buffer));
+    file_buffer->buffer = (char *)malloc(LIMIT_BUFFER_SIZE + SEARCH_BUFFER_SIZE);
+    file_buffer->start = START_INDEX;
+    file_buffer->end = SEARCH_BUFFER_SIZE;
+    return file_buffer;
 }
-
 
 long getFileLength(FILE* file_in){
 
     long file_length;
 
-    if (fseek( file_in, 0, SEEK_END ) != 0) {
+    if (fseek( file_in, START_INDEX, SEEK_END )) {
         fclose( file_in );
         return 0;
     }
@@ -34,17 +36,30 @@ long getFileLength(FILE* file_in){
     return file_length;
 }
 
+void pointersWalk(Buffer *file_buffer){
+    file_buffer->end += BYTE_SIZE;
+    file_buffer->end = file_buffer->end % LIMIT_BUFFER_SIZE;
+
+    if(!(file_buffer->start - file_buffer->end)){
+        file_buffer->start += BYTE_SIZE;
+        file_buffer->start = file_buffer->start % LIMIT_BUFFER_SIZE;
+    }
+}
 
 /**
  *    Walks 'File Buffer' and 'Search Buffer' 1 byte to Right
  * */
 void buffersWalk(Buffer* file_buffer, char *search_buffer, char *char_read){
+
+    // walk search buffer simple way
     search_buffer[0] = search_buffer[1];
     search_buffer[1] = search_buffer[2];
     search_buffer[2] = *char_read;
-    strcat(file_buffer->buffer, char_read);
-    file_buffer->end += BYTE_SIZE;
-    if(file_buffer->end > LIMIT_BUFFER_SIZE) file_buffer->start += BYTE_SIZE;
+
+    // walk file buffer mod LIMIT_BUFFER_SIZE
+    pointersWalk(file_buffer);
+
+    file_buffer->buffer[file_buffer->end] = *char_read;
 }
 
 int main(int argc, char** argv) {
@@ -72,16 +87,23 @@ int main(int argc, char** argv) {
 
     // set first 3 charts to File Buffer
     strcpy(file_buffer->buffer, search_buffer);
-    file_buffer->start = 0;
-    file_buffer->end = SEARCH_BUFFER_SIZE;
 
     // loop while != EOF
     while(fread(char_read, BYTE_SIZE, (size_t)(BYTE_SIZE), file_in)){
 
-        buffersWalk(file_buffer,search_buffer,char_read);
+        buffersWalk(file_buffer, search_buffer, char_read);
 
         // 'c' is  the delimiter of File Buffer
-        for(int c = file_buffer->start; c < file_buffer->end; c++){
+        for(int c = file_buffer->start; c != file_buffer->end; (c%LIMIT_BUFFER_SIZE)++){
+
+            if(search_buffer[START_INDEX] == file_buffer->buffer[c]){
+
+            }
+
+            for(int sb = START_INDEX; sb < SEARCH_BUFFER_SIZE; sb++){
+                // compare brute force chars buffers
+
+            }
 
 
         }
